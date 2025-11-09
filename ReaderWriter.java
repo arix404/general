@@ -1,57 +1,56 @@
-import java.util.*;
-class Sync{
-    int readcount=0;
-    final Object mutex=new Object();
-    final Object writelock=new Object();
+import java.util.concurrent.Semaphore;
 
-    void startread(){
-        synchronized(mutex){
-            readcount++;
-        }
-        if (readcount==1){
-            synchronized(writelock){};
+class RW {
+    static Semaphore mutex = new Semaphore(1);
+    static Semaphore wrt = new Semaphore(1);
+    static int readers = 0;
+
+    static class Reader implements Runnable {
+        int id;
+        Reader(int id) { this.id = id; }
+        public void run() {
+            try {
+                mutex.acquire();
+                readers++;
+                if (readers == 1) wrt.acquire();
+                mutex.release();
+
+                System.out.println("Reader " + id + " reading");
+                Thread.sleep(500);
+
+                mutex.acquire();
+                readers--;
+                if (readers == 0) wrt.release();
+                mutex.release();
+
+                System.out.println("Reader " + id + " finished");
+            } catch (InterruptedException e) {}
         }
     }
 
-    void endread(){
-        synchronized(mutex){
-            readcount--;
-        }
-        if (readcount==0){
-            synchronized(writelock){};
-        }
-    }
+    static class Writer implements Runnable {
+        int id;
+        Writer(int id) { this.id = id; }
+        public void run() {
+            try {
+                wrt.acquire();
 
-    void startwrite(){
-        synchronized(writelock){}
-    }
-    void endwrite(){
-        synchronized(writelock){}
+                System.out.println("Writer " + id + " writing");
+                Thread.sleep(500);
+
+                wrt.release();
+                System.out.println("Writer " + id + " finished");
+            } catch (InterruptedException e) {}
+        }
     }
 }
-    class Reader extends Thread{
-        Sync s;
-        Reader(Sync s){this.s=s;}
-        public void run(){
-            s.startread();
-            System.out.println("reading....");
-            s.endread();
-        }
-    }
-    class Writer extends Thread{
-        Sync s;
-        Writer(Sync s){this.s=s;}
-        public void run(){
-            s.startwrite();
-            System.out.println("writing....");
-            s.endwrite();
-        }
-    }
 
-    public class ReaderWriter{
-        public static void main(String []args){
-            Sync s=new Sync();
-            new Reader(s).start();
-            new Writer(s).start();
-        }
+public class ReaderWriter {
+    public static void main(String[] args) {
+        new Thread(new RW.Reader(1)).start();
+        new Thread(new RW.Reader(2)).start();
+        new Thread(new RW.Writer(1)).start();
+        new Thread(new RW.Reader(3)).start();
+        new Thread(new RW.Writer(2)).start();
     }
+}
