@@ -15,6 +15,7 @@ for (int page : pages) {
         faults++;
     }
     memory.add(page);
+    System.out.println(memory);
 }
 System.out.println("Page faults: " + faults);
 }

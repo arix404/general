@@ -4,7 +4,7 @@ public class SimpleBankers
 {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-
+        
         System.out.print("Enter number of processes: ");
         int n = sc.nextInt();
         System.out.print("Enter total available instances of resource: ");
